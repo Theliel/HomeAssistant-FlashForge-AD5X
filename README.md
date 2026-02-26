@@ -1,5 +1,18 @@
 # HA FlashForge AD5X
+Complete monitoring and control for FlashForge 3D printers via HomeAssistant. This is achieved extensively using FlashForge's own API, rather than G-code, although G-code transmission is also possible.
 It's not a universal HACS integration; it's my highly customized integration tailored to my needs. While it could potentially work on other models, it would require modifications and changes due to the IFS system.
+
+Again, I haven't created a complete HACS integration, but rather a "package" that can be used as a template or modified to suit individual needs, importing from the HA configuration file where the package is located
+
+<code>
+homeassistant:
+  packages: !include_dir_named packages
+  allowlist_external_dirs:
+    - "/media/grabaciones"
+    - "/config/www/gcode"
+</code>
+<br>
+I've also included the Python tool/server I created for communicating with HA for interaction with the external NFC device. Because it started as a personal project, the language used throughout in strings, variables, and other elements is predominantly Spanish; again, feel free to adjust it to your own requirements.
 
 
 ### 📸 Galery

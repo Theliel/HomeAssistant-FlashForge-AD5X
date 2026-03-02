@@ -1,3 +1,6 @@
+#Package integration for FlashForge AD5X Printer, by Theliel
+#https://github.com/Theliel/HomeAssistant-FlashForge-AD5X
+#Version: v1.1.0
 sensor:
   - platform: folder
     folder: "/media/grabaciones/snapshots"

@@ -56,7 +56,7 @@ IFS System
 	- Manufacturer, date opened and last use 
 - Load/Unload filament Controls
 - IFS module operation status report
-- Automatic update of remaining filament, per slot. Margin of error measured between 1-5%. WARNING: Not yet adjusted for multicolor printing
+- Automatic update of remaining filament, per slot. Margin of error measured between 1-5%. Unfortunately, the printer does not report the spool in use for multi-color printing, only the main color. Although it does accurately estimate the total consumption (of both colors).
 
 Filament Storage management
 - Table with all my registered spools (status, color, material, remaining Weight/length...). 
@@ -96,4 +96,3 @@ Missing/TODO:
 - Investigate how to safely list and delete internal models (Only 10 are listed and not remote deleting its allowed)
 - Decide whether or not to integrate manual extrusion controls
 - Add Native Camera: Since firmware 1.2.3 allows third-party cameras to be connected directly to the printer, once it's working properly I'll integrate a couple more things to coexist with the current viewing system, as well as the native camera controls.
-- Multi-material: I don't usually print in more than one color at a time. After I do a couple of tests, I'll adjust the filament consumption per spool accordingly.

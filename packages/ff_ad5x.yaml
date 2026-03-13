@@ -1350,7 +1350,7 @@ automation:
           usado_mm: >-
             {{ state_attr('sensor.flashforge_ad5x', 'estimatedRightLen') | float(0)
             }}
-          impuesto_purga: 170
+          impuesto_purga: 200
           entidad_json: input_text.ad5x_ifs_slot{{ slot_activo }}_json
           datos: "{{ states(entidad_json) | from_json }}"
           nueva_L: "{{ (datos.longitud | float - usado_mm - impuesto_purga) | round(2) }}"

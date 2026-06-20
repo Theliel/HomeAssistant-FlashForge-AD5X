@@ -1,6 +1,6 @@
 #Package integration for FlashForge AD5X Printer, by Theliel
 #https://github.com/Theliel/HomeAssistant-FlashForge-AD5X
-#Version: v1.1.0
+#Version: v1.1.1
 sensor:
   - platform: folder
     folder: "/media/grabaciones/snapshots"
@@ -26,8 +26,15 @@ input_text:
     name: "AD5X - Stream Camara"
     initial: !secret ff_ad5x_stream_camara
   ad5x_update_server:
-    name: "AD5X - FF Servior Actualizacion"
+    name: "AD5X - FF Servidor Actualizacion"
     initial: !secret ff_ad5x_update_server
+  ad5x_update_server2:
+    name: "AD5X - FF Servidor Actualizacion2"
+    initial: !secret ff_ad5x_update_server2
+  ad5x_update_server2_download:
+    name: "AD5X - FF Servidor Actualizacion2 Descarga"
+    initial: !secret ff_ad5x_update_server2_download
+    max: 255
   ad5x_v_software:
     name: "AD5X - Versión Software (Búsqueda)"
     icon: mdi:application-cog
@@ -906,7 +913,14 @@ rest_command:
       Cookie: "SessionID=666"
     payload: >-
       {"ControlVersion":{"Version":"{{states('input_text.ad5x_v_control')|trim}}"},"KernelVersion":{"Version":"{{states('input_text.ad5x_v_kernel')|trim}}"},"LibraryVersion":{"Version":"{{states('input_text.ad5x_v_library')|trim}}"},"SoftwareVersion":{"Version":"{{states('input_text.ad5x_v_software')|trim}}"},"PID":"0026","VID":"2B71"}
-      
+  ad5x_actualizacion_comprobar_global:
+    url: "{{ states('input_text.ad5x_update_server2') }}&version={{ states('input_text.ad5x_v_software')|trim }}"
+    method: GET
+    verify_ssl: false
+  ad5x_actualizacion_descargar_global:
+    url: "{{ states('input_text.ad5x_update_server2_download') }}&version={{ nueva_version }}"
+    method: GET
+    verify_ssl: false    
   ad5x_ifs_configurar_slot:
     url: "http://{{ states('input_text.ad5x_ip_rest') | trim }}:8898/control"
     method: POST
@@ -1797,12 +1811,61 @@ script:
     ad5x_actualizacion_buscar:
       alias: "AD5X - Actualizar: Buscar Actualización"
       sequence:
+        # 1. Ejecutar primer chequeo (POST)
         - action: rest_command.ad5x_actualizacion_comprobar
           response_variable: update_res
-
+        # 2. Mapear respuesta modular
         - variables:
-            repo: "{{ update_res.content | from_json }}"
+            repo: "{{ update_res.content }}"
+            tiene_modulos: >-
+              {{ repo.SoftwarePackage.Version is defined or
+                 repo.ControlPackage.Version is defined or
+                 repo.KernelPackage.Version is defined or
+                 repo.LibraryPackage.Version is defined }}
+        # 3. Si es Global, buscamos la info de versión Y LUEGO su descarga con la versión correcta
+        - if:
+            - condition: template
+              value_template: "{{ not tiene_modulos }}"
+          then:
+            # Buscamos qué versión hay en el servidor (Devuelve la 3.1.4)
+            - action: rest_command.ad5x_actualizacion_comprobar_global
+              response_variable: global_res
+            # Si encuentra actualización, pide la URL de descarga usando la versión NUEVA
+            - if:
+                - condition: template
+                  value_template: "{{ global_res.content.code == 0 and global_res.content.data.list | length > 0 }}"
+              then:
+                - action: rest_command.ad5x_actualizacion_descargar_global
+                  data:
+                    # <-- AQUÍ PASAMOS LA VERSIÓN NUEVA (Ej: 3.1.4) AL REST COMMAND
+                    nueva_version: "{{ global_res.content.data.list[0].version | trim }}"
+                  response_variable: download_res
 
+        # 4. Consolidar variables y URLs para la tarjeta de Software
+        - variables:
+            global_data: >-
+              {{ global_res.content if (not tiene_modulos and global_res is defined and global_res.content is defined) else {'code': -1} }}
+            es_global: >-
+              {{ global_data.code == 0 and global_data.data.list | length > 0 }}
+            
+            # Captura de la URL correcta devuelta por el servidor
+            url_software: >-
+              {% if repo.SoftwarePackage.Version is defined %}
+                {{ repo.SoftwarePackage.get('URL', '') }}
+              {% elif es_global and download_res is defined and download_res.content.code == 0 and download_res.content.data.list | length > 0 %}
+                {{ download_res.content.data.list[0].url }}
+              {% else %}
+                
+              {% endif %}
+            
+            filename_software: >-
+              {% if url_software | length > 0 %}
+                {{ url_software.split('/')[-1] }}
+              {% else %}
+                
+              {% endif %}
+
+        # 5. Popup con la acción del botón de Software automatizada
         - action: browser_mod.popup
           data:
             title: "🚀 Centro de Actualización AD5X"
@@ -1815,17 +1878,23 @@ script:
                 # --- 1. SOFTWARE ---
                 - type: custom:mushroom-template-card
                   primary: >
-                    {% if repo.SoftwarePackage.Version is defined %} Software v{{ repo.SoftwarePackage.Version }} {% else %} Software al día {% endif %}
+                    {% if repo.SoftwarePackage.Version is defined %}
+                      Software v{{ repo.SoftwarePackage.Version }}
+                    {% elif es_global %}
+                      Software {{ global_data.data.list[0].version }}
+                    {% else %}
+                      Software al día
+                    {% endif %}
                   secondary: >
-                    {% if repo.SoftwarePackage.Version is defined %} Nueva versión disponible {% else %} v{{ states('input_text.ad5x_v_software') }} {% endif %}
-                  icon: "{{ 'mdi:package-up' if repo.SoftwarePackage.Version is defined else 'mdi:check-decagram' }}"
-                  icon_color: "{{ 'green' if repo.SoftwarePackage.Version is defined else 'blue' }}"
+                    {% if repo.SoftwarePackage.Version is defined or es_global %} Nueva versión disponible {% else %} v{{ states('input_text.ad5x_v_software') }} {% endif %}
+                  icon: "{{ 'mdi:package-up' if (repo.SoftwarePackage.Version is defined or es_global) else 'mdi:check-decagram' }}"
+                  icon_color: "{{ 'green' if (repo.SoftwarePackage.Version is defined or es_global) else 'blue' }}"
                   tap_action:
-                    action: "{{ 'call-service' if repo.SoftwarePackage.Version is defined else 'none' }}"
+                    action: "{{ 'call-service' if url_software | length > 0 else 'none' }}"
                     service: script.ad5x_actualizacion_descargar
                     service_data:
-                      url: "{{ repo.SoftwarePackage.get('URL', '') }}"
-                      filename: "{{ repo.SoftwarePackage.get('URL', '').split('/')[-1] if repo.SoftwarePackage.get('URL') else '' }}"
+                      url: "{{ url_software }}"
+                      filename: "{{ filename_software }}"
 
                 # --- 2. CONTROL ---
                 - type: custom:mushroom-template-card
@@ -1872,7 +1941,7 @@ script:
                       url: "{{ repo.LibraryPackage.get('URL', '') }}"
                       filename: "{{ repo.LibraryPackage.get('URL', '').split('/')[-1] if repo.LibraryPackage.get('URL') else '' }}"
 
-                # --- NOTAS DE VERSIÓN (Dinámicas) ---
+                # --- NOTAS DE VERSIÓN ---
                 - type: markdown
                   content: >
                     {% set sw = repo.SoftwarePackage.Version is defined %}
@@ -1903,6 +1972,12 @@ script:
                       **📚 Library v{{ repo.LibraryPackage.Version }}:**
                       {{ repo.LibraryPackage.DescriptionEN }}
                       {% endif %}
+                    {% elif es_global %}
+                      {% set global_item = global_data.data.list[0] %}
+                      **🚀 Software {{ global_item.version }}:**
+                      {% set info_en = global_item.detail | selectattr('language', 'eq', 'en') | list %}
+                      {% set changelog = info_en[0].changelist if info_en | length > 0 else global_item.detail[0].changelist %}
+                      {{ changelog | replace('\n', '<br>') }}
                     {% else %}
                       ✨ **Firmware Actualizadas.**
                     {% endif %}

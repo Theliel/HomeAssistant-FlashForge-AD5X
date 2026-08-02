@@ -1,9 +1,11 @@
 #Package integration for FlashForge AD5X Printer, by Theliel
 #https://github.com/Theliel/HomeAssistant-FlashForge-AD5X
-#Version: v1.1.1
+#Version: v1.2.0
 sensor:
   - platform: folder
-    folder: "/media/grabaciones/snapshots"
+    folder: "/media/grabaciones/snapshots/ext"
+  - platform: folder
+    folder: "/media/grabaciones/snapshots/int"
   - platform: folder
     folder: "/media/grabaciones/timelapses"
   - platform: folder
@@ -25,6 +27,9 @@ input_text:
   ad5x_stream_camara:
     name: "AD5X - Stream Camara"
     initial: !secret ff_ad5x_stream_camara
+  ad5x_stream_camara_interna:
+    name: "AD5X - Stream Camara (Interna)"
+    initial: !secret ff_ad5x_stream_camara_interna
   ad5x_update_server:
     name: "AD5X - FF Servidor Actualizacion"
     initial: !secret ff_ad5x_update_server
@@ -38,7 +43,7 @@ input_text:
   ad5x_v_software:
     name: "AD5X - Versión Software (Búsqueda)"
     icon: mdi:application-cog
-    initial: "1.2.3"
+    initial: "3.1.5"
   ad5x_v_control:
     name: "AD5X - Versión Control (Búsqueda)"
     icon: mdi:controller-classic
@@ -164,6 +169,14 @@ input_select:
       - "30s"
       - "60s"
     icon: mdi:form-select
+  ad5x_timelapse_mode_interna:
+    name: "AD5X - Timelapse: Modo"
+    options:
+      - "Desactivado"
+      - "Por Capa"
+      - "30s"
+      - "60s"
+    icon: mdi:form-select    
   ad5x_selected_slot:
     name: "AD5X - IFS: Slot Seleccionado"
     options:
@@ -283,9 +296,15 @@ template:
   - name: "AD5X - Timelapse: Resumen"
     unique_id: "ad5x_timelapse_resumen"
     icon: mdi:image-multiple
-    state: '{% set fotos = state_attr(''sensor.snapshots'', ''number_of_files'') |
+    state: '{% set fotos = state_attr(''sensor.ext'', ''number_of_files'') |
       int(0) %} {% set segundos = (fotos / 24) | round(1) %} {{ fotos }} fotos  |  {{
       segundos }} seg aprox.'
+  - name: "AD5X - Timelapse: Resumen (Interna)"
+    unique_id: "ad5x_timelapse_resumen_interna"
+    icon: mdi:image-multiple
+    state: '{% set fotos = state_attr(''sensor.int'', ''number_of_files'') |
+      int(0) %} {% set segundos = (fotos / 24) | round(1) %} {{ fotos }} fotos  |  {{
+      segundos }} seg aprox.'      
   - name: "AD5X - Nombre"
     unique_id: "ad5x_nombre"
     state: "✏️  {{ state_attr('sensor.flashforge_ad5x', 'name') }}"
@@ -1216,10 +1235,15 @@ shell_command:
       -F "gcodeFile=@/config/www/gcode/{{ filename }};filename={{ filename }}" \
       --http1.1
   ad5x_timelapse_generar_snapshot: >
-     ffmpeg -i "{{ states('input_text.ad5x_stream_camara') }}" -vf "crop=600:600:1618:935" -frames:v 1 -y "/media/grabaciones/snapshots/{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg" -vf "crop=600:600:1618:935" -frames:v 1 -y "/config/www/last_preview.jpg"
+     ffmpeg -i "{{ states('input_text.ad5x_stream_camara') }}" -vf "crop=600:600:1618:935" -frames:v 1 -y "/media/grabaciones/snapshots/ext/{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg" -vf "crop=600:600:1618:935" -frames:v 1 -y "/config/www/last_preview.jpg"
+  ad5x_timelapse_generar_snapshot_interna: >
+     ffmpeg -i "{{ states('input_text.ad5x_stream_camara_interna') }}" -frames:v 1 -y "/media/grabaciones/snapshots/int/{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg" -frames:v 1 -y "/config/www/last_preview_int.jpg"     
   ad5x_timelapse_compilar_video: >
-     ffmpeg -framerate 24 -pattern_type glob -i "/media/grabaciones/snapshots/*.jpg" -c:v libx264 -pix_fmt yuv420p "/media/grabaciones/timelapses/{{ filename }}.mp4"
-  ad5x_timelapse_limpiar_fotos: "rm /media/grabaciones/snapshots/*.jpg"
+     ffmpeg -framerate 24 -pattern_type glob -i "/media/grabaciones/snapshots/ext/*.jpg" -c:v libx264 -pix_fmt yuv420p "/media/grabaciones/timelapses/{{ filename }}.mp4"
+  ad5x_timelapse_compilar_video_interna: >
+     ffmpeg -framerate 24 -pattern_type glob -i "/media/grabaciones/snapshots/int/*.jpg" -c:v libx264 -pix_fmt yuv420p "/media/grabaciones/timelapses/{{ filename }}.mp4"     
+  ad5x_timelapse_limpiar_fotos: "rm /media/grabaciones/snapshots/ext/*.jpg"
+  ad5x_timelapse_limpiar_fotos_interna: "rm /media/grabaciones/snapshots/int/*.jpg"
   ad5x_inventario_vuelco: >-
     python3 -c "import json, os, sys; path='/config/filamentos/inventario.json'; os.makedirs(os.path.dirname(path), exist_ok=True); db=json.load(open(path)) if os.path.exists(path) else {}; nueva=json.loads(sys.argv[1]); db[nueva['id']]=nueva; open(path, 'w').write(json.dumps(db, indent=2))" "{{ datos_json | replace('\"', '\\\"') }}"
   ad5x_inventario_sobreescribir: >-
@@ -1438,6 +1462,31 @@ automation:
         action: input_select.select_option
     mode: parallel
     max: 10
+    
+  - id: ad5x_timelapse_guardian_interna
+    alias: "AD5X - Timelapse: Guardián de Timelapse (Interna)"
+    triggers:
+      - trigger: state
+        entity_id: sensor.ad5x_camara_stream_url
+      - trigger: state
+        entity_id: input_select.ad5x_timelapse_mode_interna
+    conditions:
+      - condition: template
+        value_template: >
+          {% set s = states('sensor.ad5x_camara_stream_url') | trim | lower %}
+          {{ s in ['sin dirección', 'sin direccion', 'unavailable', 'unknown', 'none', ''] }}
+      - condition: template
+        value_template: >
+          {{ states('input_select.ad5x_timelapse_mode_interna') != 'Desactivado' }}
+    actions:
+      - delay: "00:00:00.500"
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.ad5x_timelapse_mode_interna
+        data:
+          option: Desactivado
+    mode: parallel
+    max: 10
 
   - id: ad5x_timelapse_controles
     alias: "AD5X - Timelapse: Control de Timelapse"
@@ -1466,7 +1515,7 @@ automation:
               - action: homeassistant.update_entity
                 target:
                   entity_id:
-                    - sensor.snapshots
+                    - sensor.ext
           - conditions:
               - condition: state
                 entity_id: input_select.ad5x_timelapse_mode
@@ -1478,7 +1527,7 @@ automation:
               - action: homeassistant.update_entity
                 target:
                   entity_id:
-                    - sensor.snapshots
+                    - sensor.ext
           - conditions:
               - condition: state
                 entity_id: input_select.ad5x_timelapse_mode
@@ -1490,9 +1539,61 @@ automation:
               - action: homeassistant.update_entity
                 target:
                   entity_id:
-                    - sensor.snapshots
+                    - sensor.ext
 
-
+  - id: ad5x_timelapse_controles_interna
+    alias: "AD5X - Timelapse: Control de Timelapse (Interna)"
+    description: Gestiona capturas por capa, 30s o 60s según el selector
+    triggers:
+      - trigger: state
+        entity_id: sensor.ad5x_capa_actual
+      - trigger: time_pattern
+        seconds: /30
+    conditions:
+      - condition: state
+        entity_id: sensor.flashforge_ad5x
+        state: printing
+      - condition: template
+        value_template: "{{ states('input_select.ad5x_timelapse_mode_interna') != 'Desactivado' }}"
+    actions:
+      - choose:
+          - conditions:
+              - condition: state
+                entity_id: input_select.ad5x_timelapse_mode_interna
+                state: Por Capa
+              - condition: template
+                value_template: "{{ trigger.platform == 'state' }}"
+            sequence:
+              - action: shell_command.ad5x_timelapse_generar_snapshot_interna
+              - action: homeassistant.update_entity
+                target:
+                  entity_id:
+                    - sensor.int
+          - conditions:
+              - condition: state
+                entity_id: input_select.ad5x_timelapse_mode_interna
+                state: 30s
+              - condition: template
+                value_template: "{{ trigger.platform == 'time_pattern' }}"
+            sequence:
+              - action: shell_command.ad5x_timelapse_generar_snapshot_interna
+              - action: homeassistant.update_entity
+                target:
+                  entity_id:
+                    - sensor.int
+          - conditions:
+              - condition: state
+                entity_id: input_select.ad5x_timelapse_mode_interna
+                state: 60s
+              - condition: template
+                value_template: "{{ trigger.platform == 'time_pattern' and now().second == 0 }}"
+            sequence:
+              - action: shell_command.ad5x_timelapse_generar_snapshot_interna
+              - action: homeassistant.update_entity
+                target:
+                  entity_id:
+                    - sensor.int
+                    
   - id: ad5x_timelapse_finalizar
     alias: "AD5X - Timelapse: Finalizar y Procesar Timelapse"
     description: >-
@@ -1506,7 +1607,7 @@ automation:
       - condition: template
         value_template: "{{ states('input_select.ad5x_timelapse_mode') != 'Desactivado' }}"
       - condition: numeric_state
-        entity_id: sensor.snapshots
+        entity_id: sensor.ext
         attribute: number_of_files
         above: 0
     actions:
@@ -1516,6 +1617,31 @@ automation:
         data:
           option: Desactivado
       - action: script.ad5x_timelapse_generar
+      
+  - id: ad5x_timelapse_finalizar_interna
+    alias: "AD5X - Timelapse: Finalizar y Procesar Timelapse (Interna)"
+    description: >-
+      Al terminar la impresión, genera el vídeo y limpia si el modo no era
+      Desactivado
+    triggers:
+      - entity_id: sensor.flashforge_ad5x
+        to: completed
+        trigger: state
+    conditions:
+      - condition: template
+        value_template: "{{ states('input_select.ad5x_timelapse_mode_interna') != 'Desactivado' }}"
+      - condition: numeric_state
+        entity_id: sensor.int
+        attribute: number_of_files
+        above: 0
+    actions:
+      - action: input_select.select_option
+        target:
+          entity_id: input_select.ad5x_timelapse_mode_interna
+        data:
+          option: Desactivado
+      - action: script.ad5x_timelapse_generar_interna
+
   - id: ad5x_inventario_actualizar_ids
     alias: "AD5X - Inventario: Actualizar Lista IDs"
     description: Permite popular los IDs en un Select para la selección
@@ -1539,7 +1665,7 @@ automation:
               {{ state_attr('input_select.ad5x_selected_inventory', 'options') }}
             {% endif %}
         action: input_select.set_options
-  - id: ad5x_inventario_respando_diario
+  - id: ad5x_inventario_respaldo_diario
     alias: "AD5X - Inventario: Respaldo Diario"
     description: Crea una copia de seguridad rotativa de 7 días del archivo de inventario
     triggers:
@@ -3107,12 +3233,12 @@ script:
     ad5x_timelapse_generar:
       alias: "AD5X - Timelapse: Generar y Limpiar Timelapse"
       variables:
-        video_name: "{{ now().strftime('%Y%m%d_%H%M%S') }}"
+        video_name: "{{ now().strftime('%Y%m%d_%H%M%S') }}_ext"
       sequence:
         - action: notify.persistent_notification
           data:
-            title: "🎬 Timelapse"
-            message: "Compilando {{ state_attr('sensor.snapshots', 'number_of_files') }} fotos..."
+            title: "🎬 Timelapse (exterior)"
+            message: "Compilando {{ state_attr('sensor.ext', 'number_of_files') }} fotos..."
         
         - action: shell_command.ad5x_timelapse_compilar_video
           data:
@@ -3120,15 +3246,45 @@ script:
         - action: shell_command.ad5x_timelapse_limpiar_fotos
         - action: homeassistant.update_entity
           target:
-            entity_id: sensor.snapshots
+            entity_id: sensor.ext
         - action: notify.persistent_notification
           data:
-            title: "✅ Proceso completado"
+            title: "✅ Proceso completado (exterior)"
             message: "Vídeo {{ video_name }} creado y fotos borradas."
         - action: notify.mobile_app_your_phone
           continue_on_error: true
           data:
-            title: "✅ Timelapse de impresión listo"
+            title: "✅ Timelapse de impresión listo (exterior)"
+            message: "Se han procesado todas las capas."
+            data:
+              video: "/media/local/grabaciones/timelapses/{{ video_name }}.mp4"
+              clickAction: "/media-browser"
+
+    ad5x_timelapse_generar_interna:
+      alias: "AD5X - Timelapse: Generar y Limpiar Timelapse (Interna)"
+      variables:
+        video_name: "{{ now().strftime('%Y%m%d_%H%M%S') }}_int"
+      sequence:
+        - action: notify.persistent_notification
+          data:
+            title: "🎬 Timelapse (interna)"
+            message: "Compilando {{ state_attr('sensor.int', 'number_of_files') }} fotos..."
+        
+        - action: shell_command.ad5x_timelapse_compilar_video_interna
+          data:
+            filename: "{{ video_name }}"
+        - action: shell_command.ad5x_timelapse_limpiar_fotos_interna
+        - action: homeassistant.update_entity
+          target:
+            entity_id: sensor.int
+        - action: notify.persistent_notification
+          data:
+            title: "✅ Proceso completado (interna)"
+            message: "Vídeo {{ video_name }} creado y fotos borradas."
+        - action: notify.mobile_app_your_phone
+          continue_on_error: true
+          data:
+            title: "✅ Timelapse de impresión listo (interna)"
             message: "Se han procesado todas las capas."
             data:
               video: "/media/local/grabaciones/timelapses/{{ video_name }}.mp4"
@@ -3141,7 +3297,18 @@ script:
         - service: shell_command.ad5x_timelapse_limpiar_fotos
         - service: homeassistant.update_entity
           target:
-            entity_id: sensor.snapshots
+            entity_id: sensor.ext
+        - service: notify.persistent_notification
+          data:
+            message: "Carpeta de fotos vaciada."
+            
+    ad5x_timelapse_borrar_snapshots_interna:
+      alias: "AD5X - Timelapse: Limpiar Temporales (Interna)"
+      sequence:
+        - service: shell_command.ad5x_timelapse_limpiar_fotos_interna
+        - service: homeassistant.update_entity
+          target:
+            entity_id: sensor.int
         - service: notify.persistent_notification
           data:
             message: "Carpeta de fotos vaciada."
@@ -3154,7 +3321,18 @@ script:
         - delay: "00:00:02"
         - service: homeassistant.update_entity
           target:
-            entity_id: sensor.snapshots
+            entity_id: sensor.ext
+      mode: single
+      
+    ad5x_timelapse_manual_snapshot_interna:
+      alias: "AD5X - Timelapse: Captura Manual y Refresco (Interna)"
+      icon: mdi:camera-plus
+      sequence:
+        - service: shell_command.ad5x_timelapse_generar_snapshot_interna
+        - delay: "00:00:02"
+        - service: homeassistant.update_entity
+          target:
+            entity_id: sensor.int
       mode: single
 
     ad5x_inventario_cargar:

@@ -34,8 +34,8 @@ Status and Sensors:
 - Printer Name (Editabled), Firmware (with check and download updates), IP/MAC, used/free internal storage, total time and filament, nozzle, IFS/camera(interal) status
 
 Live Monitoring:
-- Use of your own camera, not FF native one
-- Camera controls: Resolution, Night Vision, Abnormal motion detection... etc
+- Use your own IP camera, stock/native FlashForge Camera or both simultaneously
+- Camera controls: Resolution, Night Vision, Abnormal motion detection... etc (no stock)
 - Different Zones and Framing
 - Automatic full recording of each print. Retention for 7 days, the are generally used only as a diagnostic tool when something fails, to pinpoint the exact location and time.
 - Recordings and Timelapses Browser. Timelapses are not deleted.
@@ -44,7 +44,7 @@ Live Monitoring:
 Controls:
 - Basic Printer Control: Power on, camera/led power, pause, cancel, resume, clean bed
 - Advaneced Printer Controls: On-the-fly adjustments: speed, z-offset, fan, bed/extruder temperature). JOG Controls, goToHome, Calibrations and RAW GCode
-- Precise Timelapse Controls (Third party Camera): Automatic Timelapse creation taking images by layers, 30sec or 60secs. Option to force Timelapse in any moment or clear all snapshots
+- Precise Timelapse Controls: Automatic Timelapse creation taking images by layers, 30sec or 60secs. Option to force Timelapse in any moment or clear all snapshots. You can use your external camera or native one. (Note: Go2rtc as backend)
 - Direct printing: From a local file, or a file in the Model Gallery. Leveling, flow control, first layer inspection, and slot selection.
 
 IFS System
@@ -95,4 +95,3 @@ Missing/TODO:
 - Investigate how to change Nozzle Model (0.25, 0.4...)
 - Investigate how to safely list and delete internal models (Only 10 are listed and not remote deleting its allowed)
 - Decide whether or not to integrate manual extrusion controls
-- Add Native Camera: Since firmware 1.2.3 allows third-party cameras to be connected directly to the printer, once it's working properly I'll integrate a couple more things to coexist with the current viewing system, as well as the native camera controls.

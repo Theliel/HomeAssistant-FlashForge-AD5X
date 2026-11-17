@@ -1,6 +1,6 @@
 #Package integration for FlashForge AD5X Printer, by Theliel
 #https://github.com/Theliel/HomeAssistant-FlashForge-AD5X
-#Version: v1.2.0
+#Version: v1.3.0
 sensor:
   - platform: folder
     folder: "/media/grabaciones/snapshots/ext"
@@ -21,6 +21,9 @@ input_text:
   ad5x_ip_rest:
     name: "AD5X - IP REST"
     initial: !secret ff_ad5x_ip_rest
+  ad5x_ssh_pwd:
+    name: "AD5X - Contraseña SSH"
+    initial: !secret ff_ad5x_ssh_pwd    
   ad5x_ip_server:
     name: "AD5X - IP Servidor Python"
     initial: !secret ff_ad5x_ip_server
@@ -43,7 +46,7 @@ input_text:
   ad5x_v_software:
     name: "AD5X - Versión Software (Búsqueda)"
     icon: mdi:application-cog
-    initial: "3.1.5"
+    initial: "3.1.7"
   ad5x_v_control:
     name: "AD5X - Versión Control (Búsqueda)"
     icon: mdi:controller-classic
@@ -140,6 +143,76 @@ input_number:
     name: "AD5X - IFS: Contador Auxiliar para calcular el ID"
     min: 0
     max: 10000
+  ad5x_cam_exposure_abs:
+    name: "AD5X - Camara: Exposición (x0.1 ms)"
+    min: 1
+    max: 5000
+    step: 1
+    mode: slider
+    icon: mdi:camera-timer
+  ad5x_cam_gain:
+    name: "AD5X - Camara: Ganancia (ISO)"
+    min: 0
+    max: 100
+    step: 1
+    mode: slider
+    icon: mdi:grain
+  ad5x_cam_wb_temp:
+    name: "AD5X - Camara: Temperatura Color (K)"
+    min: 2800
+    max: 6500
+    step: 50
+    mode: slider
+    icon: mdi:thermometer
+  ad5x_cam_brightness:
+    name: "AD5X - Camara: Brillo"
+    min: -64
+    max: 64
+    step: 1
+    mode: slider
+    icon: mdi:brightness-6
+  ad5x_cam_contrast:
+    name: "AD5X - Camara: Contraste"
+    min: 0
+    max: 64
+    step: 1
+    mode: slider
+    icon: mdi:contrast-box
+  ad5x_cam_saturation:
+    name: "AD5X - Camara: Saturación"
+    min: 0
+    max: 128
+    step: 1
+    mode: slider
+    icon: mdi:palette
+  ad5x_cam_hue:
+    name: "AD5X - Camara: Matiz (Hue)"
+    min: -40
+    max: 40
+    step: 1
+    mode: slider
+    icon: mdi:color-helper
+  ad5x_cam_gamma:
+    name: "AD5X - Camara: Gamma"
+    min: 72
+    max: 500
+    step: 1
+    mode: slider
+    icon: mdi:gamma
+  ad5x_cam_sharpness:
+    name: "AD5X - Camara: Nitidez (Sharpness)"
+    min: 0
+    max: 6
+    step: 1
+    mode: slider
+    icon: mdi:image-filter-center-focus
+  ad5x_cam_backlight:
+    name: "AD5X - Camara: Compensación Contraluz"
+    min: 0
+    max: 160
+    step: 1
+    mode: slider
+    icon: mdi:contrast-circle    
 
 input_boolean:
   ad5x_print_leveling:
@@ -159,6 +232,12 @@ input_boolean:
   ad5x_adaptar_color_impresora:
     name: "AD5X - IFS: Sólo Colores Válidos"
     icon: mdi:palette
+  ad5x_cam_exposure_auto:
+    name: "AD5X - Camara: Exposición Automática"
+    icon: mdi:brightness-auto
+  ad5x_cam_wb_auto:
+    name: "AD5X - Camara: Balance Blancos Auto"
+    icon: mdi:white-balance-auto    
 
 input_select:
   ad5x_timelapse_mode:
@@ -1198,7 +1277,7 @@ command_line:
        name: "AD5X - Controles: Respuesta Consola"
        unique_id: ad5x_controles_respuesta_consola
        command: >
-         echo "~{{ states('input_text.ad5x_consola_gcode') }}" | nc -w 1 {{ states('input_text.ad5x_ip_rest') }} 8899
+         nc -w 1 {{ states('input_text.ad5x_ip_rest') }} 8899 <<< '~{{ states('input_text.ad5x_consola_gcode') }}'
        scan_interval: 86400
        value_template: "{{ value }}"
        availability: "{{ states('input_text.ad5x_consola_gcode') not in ['', 'unknown', 'none'] }}"
@@ -1238,10 +1317,6 @@ shell_command:
      ffmpeg -i "{{ states('input_text.ad5x_stream_camara') }}" -vf "crop=600:600:1618:935" -frames:v 1 -y "/media/grabaciones/snapshots/ext/{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg" -vf "crop=600:600:1618:935" -frames:v 1 -y "/config/www/last_preview.jpg"
   ad5x_timelapse_generar_snapshot_interna: >
      ffmpeg -i "{{ states('input_text.ad5x_stream_camara_interna') }}" -frames:v 1 -y "/media/grabaciones/snapshots/int/{{ now().strftime('%Y%m%d_%H%M%S') }}.jpg" -frames:v 1 -y "/config/www/last_preview_int.jpg"     
-  ad5x_timelapse_compilar_video: >
-     ffmpeg -framerate 24 -pattern_type glob -i "/media/grabaciones/snapshots/ext/*.jpg" -c:v libx264 -pix_fmt yuv420p "/media/grabaciones/timelapses/{{ filename }}.mp4"
-  ad5x_timelapse_compilar_video_interna: >
-     ffmpeg -framerate 24 -pattern_type glob -i "/media/grabaciones/snapshots/int/*.jpg" -c:v libx264 -pix_fmt yuv420p "/media/grabaciones/timelapses/{{ filename }}.mp4"     
   ad5x_timelapse_limpiar_fotos: "rm /media/grabaciones/snapshots/ext/*.jpg"
   ad5x_timelapse_limpiar_fotos_interna: "rm /media/grabaciones/snapshots/int/*.jpg"
   ad5x_inventario_vuelco: >-
@@ -1252,6 +1327,23 @@ shell_command:
     python3 -c "import os, shutil; path='/config/filamentos/inventario.json'; 
     [shutil.move(f'{path}.{i}', f'{path}.{i+1}') for i in range(6, 0, -1) if os.path.exists(f'{path}.{i}')]; 
     shutil.copy(path, f'{path}.1') if os.path.exists(path) else None"
+  ad5x_cam_leer: >
+    sshpass -p "{{ states('input_text.ad5x_ssh_pwd') }}"
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5
+    root@{{ states('input_text.ad5x_ip_rest') }}
+    "export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:/usr/prog/x264/lib:/usr/prog/openssl-1.0.2d/lib:/usr/prog/ffmpeg-4.0.2/lib:/usr/prog/PROGRAM/lib:/usr/prog/PROGRAM/software &&
+    /usr/prog/Python-3.8.2/bin/python3 /usr/data/cam_ctrl.py --json"
+  ad5x_cam_escribir: >
+    sshpass -p "{{ states('input_text.ad5x_ssh_pwd') }}"
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5
+    root@{{ states('input_text.ad5x_ip_rest') }}
+    "export LD_LIBRARY_PATH=/usr/prog/Python-3.8.2/lib:/usr/prog/x264/lib:/usr/prog/openssl-1.0.2d/lib:/usr/prog/ffmpeg-4.0.2/lib:/usr/prog/PROGRAM/lib:/usr/prog/PROGRAM/software &&
+    /usr/prog/Python-3.8.2/bin/python3 /usr/data/cam_ctrl.py {{ args }}"    
+long_shell_command:
+  ad5x_timelapse_compilar_video: >
+     ffmpeg -framerate 24 -pattern_type glob -i "/media/grabaciones/snapshots/ext/*.jpg" -c:v libx264 -pix_fmt yuv420p "/media/grabaciones/timelapses/{{ filename }}.mp4"
+  ad5x_timelapse_compilar_video_interna: >
+     ffmpeg -framerate 24 -pattern_type glob -i "/media/grabaciones/snapshots/int/*.jpg" -c:v libx264 -pix_fmt yuv420p "/media/grabaciones/timelapses/{{ filename }}.mp4" 
 
 automation:
   - id: ad5x_polling_dinamico
@@ -3159,6 +3251,205 @@ script:
               {% if tipo == 'descargar' %} 1
               {% else %} 0
               {% endif %}              
+    ad5x_camara_abrir_config:
+        alias: "AD5X Cámara: Leer y Abrir Config"
+        mode: single
+        sequence:
+          - service: shell_command.ad5x_cam_leer
+            response_variable: cam_resp
+          - variables:
+              data: "{{ cam_resp.stdout | from_json }}"
+          - service: input_boolean.turn_{{ 'on' if (data['0x009a0901'] | int(3)) == 3 else 'off' }}
+            target:
+              entity_id: input_boolean.ad5x_cam_exposure_auto
+          - service: input_boolean.turn_{{ 'on' if (data['0x0098090c'] | int(1)) == 1 else 'off' }}
+            target:
+              entity_id: input_boolean.ad5x_cam_wb_auto
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_exposure_abs
+              value: "{{ data['0x009a0902'] | int(312) }}"
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_gain
+              value: "{{ data['0x00980913'] | int(0) }}"
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_wb_temp
+              value: "{{ data['0x0098091a'] | int(4600) }}"
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_brightness
+              value: "{{ data['0x00980900'] | int(0) }}"
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_contrast
+              value: "{{ data['0x00980901'] | int(32) }}"
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_saturation
+              value: "{{ data['0x00980902'] | int(64) }}"
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_hue
+              value: "{{ data['0x00980903'] | int(0) }}"
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_gamma
+              value: "{{ data['0x00980910'] | int(100) }}"
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_sharpness
+              value: "{{ data['0x0098091b'] | int(3) }}"
+          - service: input_number.set_value
+            data:
+              entity_id: input_number.ad5x_cam_backlight
+              value: "{{ data['0x0098091c'] | int(12) }}"
+          - service: browser_mod.popup
+            data:
+              title: "Configuración Cámara AD5X"
+              size: normal
+              content:
+                type: vertical-stack
+                cards:
+                  # --- BLOQUE 1: EXPOSICIÓN Y GANANCIA ---
+                  - type: entities
+                    title: Exposición y Sensor
+                    show_header_toggle: false
+                    entities:
+                      - entity: input_boolean.ad5x_cam_exposure_auto
+                        name: Exposición Automática
+                  - type: conditional
+                    conditions:
+                      - entity: input_boolean.ad5x_cam_exposure_auto
+                        state: "off"
+                    card:
+                      type: entities
+                      show_header_toggle: false
+                      entities:
+                        - entity: input_number.ad5x_cam_exposure_abs
+                          name: Tiempo Exposición (x0.1 ms)
+                        - entity: input_number.ad5x_cam_gain
+                          name: Ganancia / ISO
+
+                  # --- BLOQUE 2: BALANCE DE BLANCOS ---
+                  - type: entities
+                    title: Color y Balance de Blancos
+                    show_header_toggle: false
+                    entities:
+                      - entity: input_boolean.ad5x_cam_wb_auto
+                        name: Balance de Blancos Auto
+                  - type: conditional
+                    conditions:
+                      - entity: input_boolean.ad5x_cam_wb_auto
+                        state: "off"
+                    card:
+                      type: entities
+                      show_header_toggle: false
+                      entities:
+                        - entity: input_number.ad5x_cam_wb_temp
+                          name: Temperatura Color (K)
+
+                  # --- BLOQUE 3: IMAGEN ---
+                  - type: entities
+                    title: Ajustes de Imagen
+                    show_header_toggle: false
+                    entities:
+                      - entity: input_number.ad5x_cam_sharpness
+                        name: Nitidez (Sharpness)
+                      - entity: input_number.ad5x_cam_backlight
+                        name: Compensación Contraluz
+                      - entity: input_number.ad5x_cam_brightness
+                        name: Brillo
+                      - entity: input_number.ad5x_cam_contrast
+                        name: Contraste
+                      - entity: input_number.ad5x_cam_saturation
+                        name: Saturación
+                      - entity: input_number.ad5x_cam_hue
+                        name: Matiz (Hue)
+                      - entity: input_number.ad5x_cam_gamma
+                        name: Gamma
+
+                  # --- BOTONES DE ACCIÓN ---
+                  - type: horizontal-stack
+                    cards:
+                      - type: custom:button-card
+                        name: Aplicar Valores
+                        icon: mdi:check-bold
+                        tap_action:
+                          action: call-service
+                          service: script.ad5x_camara_aplicar_manual
+                        styles:
+                          card:
+                            - height: 42px
+                            - border-radius: 10px
+                            - background: var(--primary-color)
+                            - color: var(--text-primary-color)
+                          name:
+                            - font-weight: 600
+                            - font-size: 14px
+                      - type: custom:button-card
+                        name: Preset Óptimo
+                        icon: mdi:auto-fix
+                        tap_action:
+                          action: call-service
+                          service: script.ad5x_camara_auto
+                        styles:
+                          card:
+                            - height: 42px
+                            - border-radius: 10px
+                            - background: rgba(var(--rgb-primary-text-color), 0.1)
+                          name:
+                            - font-weight: 500
+                            - font-size: 14px
+    ad5x_camara_aplicar_manual:
+        alias: "AD5X Cámara: Aplicar Valores Manuales"
+        mode: single
+        sequence:
+          - variables:
+              exp_auto: "{{ is_state('input_boolean.ad5x_cam_exposure_auto', 'on') }}"
+              wb_auto: "{{ is_state('input_boolean.ad5x_cam_wb_auto', 'on') }}"
+              cmd_args: >-
+                {% set items = [] %}
+                {% if exp_auto %}
+                  {% set items = items + ['0x009a0901=3'] %}
+                {% else %}
+                  {% set items = items + [
+                    '0x009a0901=1',
+                    '0x009a0902=' ~ (states('input_number.ad5x_cam_exposure_abs') | int),
+                    '0x00980913=' ~ (states('input_number.ad5x_cam_gain') | int)
+                  ] %}
+                {% endif %}
+                {% if wb_auto %}
+                  {% set items = items + ['0x0098090c=1'] %}
+                {% else %}
+                  {% set items = items + [
+                    '0x0098090c=0',
+                    '0x0098091a=' ~ (states('input_number.ad5x_cam_wb_temp') | int)
+                  ] %}
+                {% endif %}
+                {% set items = items + [
+                  '0x00980900=' ~ (states('input_number.ad5x_cam_brightness') | int),
+                  '0x00980901=' ~ (states('input_number.ad5x_cam_contrast') | int),
+                  '0x00980902=' ~ (states('input_number.ad5x_cam_saturation') | int),
+                  '0x00980903=' ~ (states('input_number.ad5x_cam_hue') | int),
+                  '0x00980910=' ~ (states('input_number.ad5x_cam_gamma') | int),
+                  '0x0098091b=' ~ (states('input_number.ad5x_cam_sharpness') | int),
+                  '0x0098091c=' ~ (states('input_number.ad5x_cam_backlight') | int)
+                ] %}
+                {{ items | join(' ') }}
+          - service: shell_command.ad5x_cam_escribir
+            data:
+              args: "{{ cmd_args }}"
+          - service: browser_mod.close_popup
+    ad5x_camara_auto:
+        alias: "AD5X Cámara: Aplicar Preset Óptimo"
+        mode: single
+        sequence:
+          - service: shell_command.ad5x_cam_escribir
+            data:
+              args: "0x009a0901=1 0x009a0902=312 0x00980913=0 0x0098091b=6 0x0098091c=0 0x0098090c=1 0x00980918=1"
+          - service: browser_mod.close_popup          
     ad5x_controles_cargar_miniatura:
         alias: "AD5X - Controles: Cargar Miniatura Archivo Impresora"
         sequence:
@@ -3240,7 +3531,7 @@ script:
             title: "🎬 Timelapse (exterior)"
             message: "Compilando {{ state_attr('sensor.ext', 'number_of_files') }} fotos..."
         
-        - action: shell_command.ad5x_timelapse_compilar_video
+        - action: long_shell_command.ad5x_timelapse_compilar_video
           data:
             filename: "{{ video_name }}"
         - action: shell_command.ad5x_timelapse_limpiar_fotos
@@ -3270,7 +3561,7 @@ script:
             title: "🎬 Timelapse (interna)"
             message: "Compilando {{ state_attr('sensor.int', 'number_of_files') }} fotos..."
         
-        - action: shell_command.ad5x_timelapse_compilar_video_interna
+        - action: long_shell_command.ad5x_timelapse_compilar_video_interna
           data:
             filename: "{{ video_name }}"
         - action: shell_command.ad5x_timelapse_limpiar_fotos_interna

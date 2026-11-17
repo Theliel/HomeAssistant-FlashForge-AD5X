@@ -1,3 +1,26 @@
+"""
+SaraTagBridge.py
+
+Herramienta para leer/escribir/borrar los tags usados en la implementación de HA. También dispone de un modo "servidor"
+
+Uso:
+    python SaraTagBridge.py 
+
+Licencia:
+    Este código se distribuye bajo la licencia Creative Commons
+    Atribución-NoComercial 4.0 Internacional (CC BY-NC 4.0).
+    - Eres libre de compartir y adaptar el código.
+    - Debes dar crédito de manera adecuada al autor original.
+    - No puedes hacer uso del material con propósitos comerciales.
+    Más info: https://creativecommons.org/licenses/by-nc/4.0/deed.es
+"""
+
+__author__ = "Theliel"
+__copyright__ = "Copyright 2026, HomeAssistant-FlashForge-AD5X"
+__license__ = "CC BY-NC 4.0"
+__version__ = "1.0.7"
+__web__ = "https://blog.theliel.es"
+
 import argparse
 import json
 import os

@@ -1,14 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-FlashForge AD5X — V4L2 UVC camera control utility (pure Python stdlib).
-Permite consultar y ajustar exposición, ganancia (ISO), brillo, contraste
-y nitidez directamente sobre /dev/video0 sin tocar firmwareExe.
+cam_ctrl.py
+
+FlashForge AD5X — V4L2 UVC camera control utility. Permite consultar y ajustar exposición, ganancia (ISO), brillo, contraste
+y nitidez directamente sobre /dev/video0 sin tocar firmwareExe. 
+
+Uso:
+
 Llamada sin parámetros, muestras las propiedades, o se puiede llamar directamente para modificarlas:
 /usr/prog/Python-3.8.2/bin/python3 /usr/data/cam_ctrl.py sharpness=2
+
 o usando el ID:
 /usr/prog/Python-3.8.2/bin/python3 /usr/data/cam_ctrl.py 0x0098091a=5000
+
+
+Licencia:
+    Este código se distribuye bajo la licencia Creative Commons
+    Atribución-NoComercial 4.0 Internacional (CC BY-NC 4.0).
+    - Eres libre de compartir y adaptar el código.
+    - Debes dar crédito de manera adecuada al autor original.
+    - No puedes hacer uso del material con propósitos comerciales.
+    Más info: https://creativecommons.org/licenses/by-nc/4.0/deed.es
+
 """
+__author__ = "Theliel"
+__copyright__ = "Copyright 2026, HomeAssistant-FlashForge-AD5X"
+__license__ = "CC BY-NC 4.0"
+__version__ = "1.0.0"
+__web__ = "https://blog.theliel.es"
 
 import fcntl
 import json

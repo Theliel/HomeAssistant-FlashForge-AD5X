@@ -12,7 +12,11 @@ homeassistant:
     - "/config/www/gcode"
 </code>
 <br>
-I've also included the Python tool/server I created for communicating with HA for interaction with the external NFC device. Because it started as a personal project, the language used throughout in strings, variables, and other elements is predominantly Spanish; again, feel free to adjust it to your own requirements.
+
+Notes:
+- Added the Python tool/server I created for communicating with HA for interaction with the external NFC device.
+- Added the Python script for access/controlling Internal Camera. Requires root access to the printer in order to copy it to /usr/data/
+- Because it started as a personal project, the language used throughout in strings, variables, and other elements is predominantly Spanish; again, feel free to adjust it to your own requirements.
 
 
 ### 📸 Galery
@@ -22,6 +26,8 @@ I've also included the Python tool/server I created for communicating with HA fo
 | <a href="./assets/1.png"><img src="./assets/1.png" width="250"></a> | <a href="./assets/2.png"><img src="./assets/2.png" width="250"></a> | <a href="./assets/3.png"><img src="./assets/3.png" width="250"></a> |
 | **Configure SLOT** | **Storage Management** | **Update System** |
 | <a href="./assets/4.png"><img src="./assets/4.png" width="250"></a> | <a href="./assets/5.png"><img src="./assets/5.png" width="250"></a> | <a href="./assets/6.png"><img src="./assets/6.png" width="250"></a> |
+| **Internal Camera Controls** |
+| <a href="./assets/7.png"><img src="./assets/7.png" width="250"></a> |
 
 
 ## 🎥 Using Tags Sample
@@ -35,7 +41,8 @@ Status and Sensors:
 
 Live Monitoring:
 - Use your own IP camera, stock/native FlashForge Camera or both simultaneously
-- Camera controls: Resolution, Night Vision, Abnormal motion detection... etc (no stock)
+- External Camera controls: Resolution, Night Vision, Abnormal motion detection... etc (external)
+- Internal Camera Controls: xposure, Gain, White Balance, Brightness... etc (internal, stock or third party)
 - Different Zones and Framing
 - Automatic full recording of each print. Retention for 7 days, the are generally used only as a diagnostic tool when something fails, to pinpoint the exact location and time.
 - Recordings and Timelapses Browser. Timelapses are not deleted.

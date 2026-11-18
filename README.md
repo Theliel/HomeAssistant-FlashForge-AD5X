@@ -53,7 +53,7 @@ Controls:
 
 IFS System
 - Complete IFS control: Status and configuration of the 4 active slots. Only Color and Material are used by the printer; the remaining parameters are for internal management.
-	- Visual Status of currnent slots: material, color and Weight/length remaining, with color warning depending on the amount of filament remaining
+	- Visual Status of current slots: material, color and Weight/length remaining, with color warning depending on the amount of filament remaining
 	- Choose Predefined colors/materials or a custom (any) color/material.
 	- Custom Subtype/style
     - Weight/length remaining and density. With two of them, you can calculate the third.
@@ -75,9 +75,9 @@ Filament NFC Tag system (NFC NTAG215 (504Bytes)
 	    - https://www.home-assistant.io/tag/IDTAG
 		- io.homeassistant.companion.android
 		- io.homessistant.ccompanion.android.minimal
-	- TAG Pages 32-96 > My Own format (max 256Byte)
+	- TAG Pages 50-113 > My Own format (max 256Byte)
 	    - JSON Format
-		- Atributes: "id", "material", "submaterial", "color", "densidad", "peso", "longitud", "fabricante", "fecha", "ultimo_uso".
+		- Attributes: "id", "material", "submaterial", "color", "densidad", "peso", "longitud", "fabricante", "fecha", "ultimo_uso".
 		- the unique id its shared and used for HA IDTAG too. Format: Year-XXX (2026-125)
 - Different modes of use and operation, depending on whether we use the mobile phone or an external NFC reader.
 	- HA Automatic: Bring the phone close to the spool tag., and it will display in your phone simplified filament information directly, without needing to open HA. 

@@ -19,7 +19,7 @@ Notes:
 - Because it started as a personal project, the language used throughout in strings, variables, and other elements is predominantly Spanish; again, feel free to adjust it to your own requirements.
 
 
-### 📸 Galery
+### 📸 Gallery
 
 | Status and Sensors | IFS and advanced | Printing Options |
 | :---: | :---: | :---: |
@@ -32,8 +32,11 @@ Notes:
 
 ## 🎥 Using Tags Sample
 
-![Tags in Acttions](assets/tags.mp4)
+![Tags in Actions](assets/tags.mp4)
 
+
+
+### 🛠️ Features
 
 Status and Sensors:
 - Real-time display of printer status and print progress: Status, current/target temperatures, Image Model, spool in use, speed, layers...

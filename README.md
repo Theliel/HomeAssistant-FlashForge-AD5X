@@ -17,26 +17,20 @@ Notes:
 - Added the Python tool/server I created for communicating with HA for interaction with the external NFC device.
 - Added the Python script for access/controlling Internal Camera. Requires root access to the printer in order to copy it to /usr/data/
 - Because it started as a personal project, the language used throughout in strings, variables, and other elements is predominantly Spanish; again, feel free to adjust it to your own requirements.
+<br>
 
-
-### 📸 Gallery
+## 📸 Gallery
 
 | Status and Sensors | IFS and advanced | Printing Options |
 | :---: | :---: | :---: |
 | <a href="./assets/1.png"><img src="./assets/1.png" width="250"></a> | <a href="./assets/2.png"><img src="./assets/2.png" width="250"></a> | <a href="./assets/3.png"><img src="./assets/3.png" width="250"></a> |
 | **Configure SLOT** | **Storage Management** | **Update System** |
 | <a href="./assets/4.png"><img src="./assets/4.png" width="250"></a> | <a href="./assets/5.png"><img src="./assets/5.png" width="250"></a> | <a href="./assets/6.png"><img src="./assets/6.png" width="250"></a> |
-| **Internal Camera Controls** |
-| <a href="./assets/7.png"><img src="./assets/7.png" width="250"></a> |
+| **Internal Camera Controls** | **🎥 NFC Tags Reading/Writing** |
+| <a href="./assets/7.png"><img src="./assets/7.png" width="250"></a> | <a href="./assets/tags.mp4"><img src="./assets/tags.png" width="250"></a> | 
+<br>
 
-
-## 🎥 Using Tags Sample
-
-![Tags in Actions](assets/tags.mp4)
-
-
-
-### 🛠️ Features
+## 🛠️ Features
 
 Status and Sensors:
 - Real-time display of printer status and print progress: Status, current/target temperatures, Image Model, spool in use, speed, layers...
